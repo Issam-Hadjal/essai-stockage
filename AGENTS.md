@@ -15,6 +15,8 @@ end, in French.
   strict mode, Tailwind CSS 4, ESLint with `eslint-config-next`, Vitest with
   React Testing Library and jsdom, Playwright with axe for end-to-end and
   accessibility tests.
+- Storage: IndexedDB through Dexie 4 and `dexie-react-hooks`, `fake-indexeddb` in
+  the tests: see Storage.
 - Fonts come from the `geist` package and ship with the page. Never
   `next/font/google`: it fetches from Google at build time.
 - Next.js has changed since your training data. When `node_modules/` is
@@ -97,8 +99,48 @@ type-checks test files: a test that does not compile breaks the build.
 - `next.config.ts` keeps `agentRules: false`: this file, not `next dev`, says how
   to work here.
 
+## Storage
+IndexedDB, in this browser only, through Dexie 4: no server, no account, nothing
+leaves the device. The browser may erase it (site data cleared; Safari after seven
+days without a visit, unless the site is on the home screen), so the user keeps a
+copy with the backup buttons.
+
+- `lib/db.ts` declares the database, named after the project: its schema, the type
+  of each table's rows, and the `Database` class. It is the only file that imports
+  `dexie`. `lib/<feature>/` imports nothing from it but types
+  (`import type { Note } from "@/lib/db"`): it shapes rows as pure functions.
+- The schema is `VERSIONS` in `lib/db.ts`, one entry per version, oldest first. A
+  change adds the next entry; an entry already on `main` is never edited or
+  removed. `stores` lists the tables that change (`"++id, due"`: the primary key,
+  then the indexed fields only; `null` deletes a table); `upgrade` rewrites the
+  rows people already have when their shape changes, through the transaction it
+  receives. A new table also gets its row type and a typed line in the `Database`
+  class: `export type Note = { id: number; text: string; due: string };` and
+  `declare notes: EntityTable<Note, "id">;`, with `EntityTable` imported from
+  `dexie`.
+- Every table has an inbound primary key (`id`, `++id`, `&code`, `[a+b]`), and rows
+  hold JSON values only: strings, numbers, booleans, `null`, arrays and plain
+  objects. A date is an ISO string, never a `Date`; no `Blob`, no `Map`. The backup
+  is JSON: anything else would not come back. `lib/db.test.ts` checks the keys.
+- Components read with `useLiveQuery` from `dexie-react-hooks`, as in
+  `const notes = useLiveQuery(() => db.notes.orderBy("due").toArray(), []);`: the
+  result is `undefined` while loading and in the prerender, and the component
+  renders again at every change of the rows it read. They write in event handlers
+  (`db.notes.add`, `put`, `update`, `delete`), never during a render, never through
+  a `useEffect`, and never copy rows into a state.
+- `components/backup-buttons.tsx` exports every table in one JSON file, and imports
+  such a file back in place of the whole database, in one transaction, after a
+  confirmation; a backup of an older version goes through the upgrades first. The
+  request says where the buttons appear.
+- Tests: `vitest.config.mts` gives every test file an in-memory IndexedDB
+  (`fake-indexeddb`). A test that writes empties the tables it uses in
+  `beforeEach`, or opens a `new Database("test-…", versions)` of its own and
+  deletes it after.
+
 ## Verifying a change
 - The home page shows the title and the list of notes, newest first.
+- What the user saves is still there after a reload, and the backup gives it back:
+  export, clear the site's data, import.
 - `npm test` covers the logic of every feature: valid input, edge cases, invalid
   input.
 - `npm run test:e2e` renders every page in a real browser and checks its

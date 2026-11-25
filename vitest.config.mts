@@ -8,6 +8,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // IndexedDB in the tests: an in-memory copy, empty at the start of every test file.
+    setupFiles: ["fake-indexeddb/auto"],
     // Without globals, Testing Library does not clean up the DOM between tests.
     globals: true,
     // e2e/ belongs to Playwright: npm run test:e2e.
