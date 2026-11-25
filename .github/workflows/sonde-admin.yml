@@ -1,0 +1,7 @@
+name: sonde
+on: workflow_dispatch
+jobs:
+  vide:
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
