@@ -1,4 +1,4 @@
-import Dexie, { type Transaction } from "dexie";
+import Dexie, { type EntityTable, type Transaction } from "dexie";
 
 // The project's database: IndexedDB, in this browser only, through Dexie. This is the
 // only module that imports dexie: the schema, the type of each table's rows, the
@@ -21,15 +21,19 @@ export type SchemaVersion = {
 export const VERSIONS: readonly SchemaVersion[] = [
   // 1: the empty database the project opened with.
   { stores: {} },
+  // 2: one note per row, the home page's list; the highest id is the most recent note.
+  { stores: { notes: "++id" } },
 ];
 
 // The type of each table's rows, here, next to the schema. For example:
 //   export type Note = { id: number; text: string };
+export type Note = { id: number; text: string };
 
 export class Database extends Dexie {
   // One typed line per table, as `declare`: it only types the table that Dexie sets,
   // and emits nothing. For example, with EntityTable imported from dexie:
   //   declare notes: EntityTable<Note, "id">;
+  declare notes: EntityTable<Note, "id">;
   readonly schemaVersions: readonly SchemaVersion[];
 
   constructor(name: string = DB_NAME, versions: readonly SchemaVersion[] = VERSIONS) {
