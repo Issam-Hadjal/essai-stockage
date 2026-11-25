@@ -3,6 +3,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { makeBackup, readBackup } from "@/lib/backup";
 import { type Database, db, exportTables, restoreTables } from "@/lib/db";
+import { download, localDay } from "@/lib/download";
 
 // The user's own copy of the data: IndexedDB lives in this browser only, and the
 // browser may erase it. Export downloads one JSON file with every table; import puts
@@ -12,24 +13,6 @@ import { type Database, db, exportTables, restoreTables } from "@/lib/db";
 const BUTTON =
   "rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium hover:bg-zinc-100 " +
   "disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800";
-
-// The day in the browser's calendar, for the file name: never toISOString, which
-// gives the UTC day.
-function localDay(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function download(text: string, fileName: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  // Revoked a little later: some browsers start the download after the click returns.
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 // `database` is for the tests; the pages use the project's database.
 export function BackupButtons({ database = db }: { database?: Database }) {
