@@ -1,8 +1,9 @@
-# <Project name>
+# Essai stockage
 
 ## Purpose
-<Two or three sentences, written when the project opens: what it does, for whom,
-and what a finished change looks like.>
+A throwaway project to try the IndexedDB storage kit: a short list of notes kept in
+this browser, with the backup buttons. A finished change makes one use work end to
+end, in French.
 
 ## Stack
 - Runtime: Node.js 26, the version of the CI and of Vercel, pinned in `.nvmrc`
@@ -97,8 +98,7 @@ type-checks test files: a test that does not compile breaks the build.
   to work here.
 
 ## Verifying a change
-<Written when the project opens: which pages must render and what they must
-show; which flows to try.>
+- The home page shows the title and the list of notes, newest first.
 - `npm test` covers the logic of every feature: valid input, edge cases, invalid
   input.
 - `npm run test:e2e` renders every page in a real browser and checks its

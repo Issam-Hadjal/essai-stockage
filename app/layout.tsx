@@ -4,8 +4,8 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Modèle Next.js",
-  description: "Point de départ des projets Next.js : à remplacer par l’objet du projet.",
+  title: "Essai stockage",
+  description: "Projet jetable pour essayer ouvrir-projet 1.1.0 et le kit IndexedDB.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
