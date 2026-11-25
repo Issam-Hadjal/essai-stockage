@@ -16,4 +16,15 @@ describe("Home", () => {
     expect(screen.getByRole("button", { name: "Ajouter" })).toBeTruthy();
     expect(screen.getByRole("list")).toBeTruthy();
   });
+
+  it("offers the export and import buttons under the list of notes", () => {
+    render(<Home />);
+    const list = screen.getByRole("list");
+    const exportButton = screen.getByRole("button", { name: "Exporter les données" });
+    const importButton = screen.getByRole("button", { name: "Importer une sauvegarde" });
+    // Under the list: the list comes before both buttons in the document.
+    const follows = Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(list.compareDocumentPosition(exportButton) & follows).toBeTruthy();
+    expect(list.compareDocumentPosition(importButton) & follows).toBeTruthy();
+  });
 });
