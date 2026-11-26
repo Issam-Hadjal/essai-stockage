@@ -1,5 +1,7 @@
-// Saving a text as a file, in the browser: the export buttons hand it a JSON text and a
-// name, and it downloads it. The event handlers call it, never a render.
+// Saving a text as a file, in the browser: the export buttons hand it a text and a name,
+// and it downloads it. The type says what the file holds — a JSON backup by default, a
+// CSV file for the spreadsheets — so that the browser and the spreadsheet read it right.
+// The event handlers call it, never a render.
 
 // The day in the browser's calendar, for the file name: never toISOString, which gives
 // the UTC day.
@@ -9,8 +11,8 @@ export function localDay(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export function download(text: string, fileName: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+export function download(text: string, fileName: string, type = "application/json"): void {
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;

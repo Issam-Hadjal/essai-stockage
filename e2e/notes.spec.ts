@@ -79,3 +79,27 @@ test("the exported file gives the notes back, in their order, after a reload", a
   await expect(rows).toHaveCount(2);
   expect(await shownNotes(page)).toEqual(["Appeler", "Acheter du pain"]);
 });
+
+test("the CSV export downloads the notes, a line per note, a column per datum", async ({ page }) => {
+  await page.goto("/");
+  for (const text of ["Acheter du pain", "Appeler"]) {
+    await page.getByLabel("Note").fill(text);
+    await page.getByRole("button", { name: "Ajouter" }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: text })).toBeVisible();
+  }
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Exporter en CSV" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/\.csv$/);
+  const file = test.info().outputPath("notes.csv");
+  await download.saveAs(file);
+
+  // The first line names the columns, then one line per note, in display order: the id on
+  // its column, the text on the next one, whole.
+  const [header, ...lines] = (await readFile(file, "utf8")).split("\r\n").filter(Boolean);
+  expect(header).toBe("id,texte");
+  expect(lines.every((line) => /^\d+,/.test(line))).toBe(true);
+  expect(lines.map((line) => line.slice(line.indexOf(",") + 1))).toEqual(["Appeler", "Acheter du pain"]);
+});
