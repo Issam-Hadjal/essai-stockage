@@ -51,3 +51,24 @@ export function readNotesFile(text: string): NotesFileResult {
 export function inStorageOrder(texts: readonly string[]): string[] {
   return [...texts].reverse();
 }
+
+// --- The notes CSV ------------------------------------------------------------------
+
+// The notes for a spreadsheet: CSV as RFC 4180 describes it, a comma between the fields,
+// a CRLF between the lines, a first line naming the columns, then one line per note. A
+// note holds two data, so it gets two columns: its text, and its id in the storage. A
+// value holding the separator, a double quote or a line break is quoted, and its own
+// double quotes are doubled, so that a spreadsheet reads it back whole. The text is
+// UTF-8, which keeps the accented characters.
+
+const CSV_SEPARATOR = ",";
+const CSV_COLUMNS = ["id", "texte"];
+
+function csvField(value: string): string {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+export function serializeNotesCsv(notes: readonly Note[]): string {
+  const lines = [CSV_COLUMNS, ...notes.map((note) => [String(note.id), note.text])];
+  return lines.map((fields) => fields.map(csvField).join(CSV_SEPARATOR)).join("\r\n") + "\r\n";
+}

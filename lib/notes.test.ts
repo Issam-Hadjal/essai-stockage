@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { inStorageOrder, prepareNote, readNotesFile, serializeNotes } from "./notes";
+import type { Note } from "@/lib/db";
+import { inStorageOrder, prepareNote, readNotesFile, serializeNotes, serializeNotesCsv } from "./notes";
 
 describe("prepareNote", () => {
   it("keeps a valid note as it was typed", () => {
@@ -89,5 +90,88 @@ describe("inStorageOrder", () => {
 
   it("has nothing to reverse in an empty list", () => {
     expect(inStorageOrder([])).toEqual([]);
+  });
+});
+
+// A reader for the format serializeNotesCsv writes: quoted fields, doubled quotes, and
+// the separator or a line break inside the quotes. It reads a produced text back, so that
+// a test tells an escaped value from a broken one, where an expected string could not.
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (quoted) {
+      if (character !== '"') field += character;
+      else if (text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else quoted = false;
+    } else if (character === '"') quoted = true;
+    else if (character === ",") {
+      row.push(field);
+      field = "";
+    } else if (character === "\r" && text[index + 1] === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      index += 1;
+    } else field += character;
+  }
+  // The export ends with a line break: nothing is left to read.
+  if (field !== "" || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
+}
+
+const NOTES: Note[] = [
+  { id: 2, text: "Appeler" },
+  { id: 1, text: "Acheter du pain" },
+];
+
+describe("serializeNotesCsv", () => {
+  it("names the columns on the first line, then writes one line per note, a column per datum", () => {
+    expect(parseCsv(serializeNotesCsv(NOTES))).toEqual([
+      ["id", "texte"],
+      ["2", "Appeler"],
+      ["1", "Acheter du pain"],
+    ]);
+  });
+
+  it("writes the first line alone when there is no note", () => {
+    expect(parseCsv(serializeNotesCsv([]))).toEqual([["id", "texte"]]);
+  });
+
+  it("quotes a value holding the separator, a double quote or a line break, and reads it back whole", () => {
+    const values = ["un, deux", 'il a dit "bonjour"', "première ligne\nseconde ligne"];
+    const notes = values.map((text, index) => ({ id: index + 1, text }));
+
+    const rows = parseCsv(serializeNotesCsv(notes));
+
+    expect(rows.slice(1).map((row) => row[1])).toEqual(values);
+  });
+
+  it("doubles the double quotes of a value, as RFC 4180 asks", () => {
+    expect(serializeNotesCsv([{ id: 1, text: 'il a dit "bonjour"' }])).toBe(
+      'id,texte\r\n1,"il a dit ""bonjour"""\r\n',
+    );
+  });
+
+  it("keeps the accented characters", () => {
+    const text = "Déjà vu à Noël, très bien";
+    expect(parseCsv(serializeNotesCsv([{ id: 1, text }]))[1][1]).toBe(text);
+  });
+
+  it("leaves the list it reads alone", () => {
+    const notes = [{ id: 1, text: "Appeler" }];
+
+    serializeNotesCsv(notes);
+
+    expect(notes).toEqual([{ id: 1, text: "Appeler" }]);
   });
 });
