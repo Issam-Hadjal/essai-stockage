@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { type Database, db } from "@/lib/db";
 import { prepareNote } from "@/lib/notes";
 import { NotesBackup } from "./notes-backup";
+import { NotesExport } from "./notes-export";
 
 // The home page's notes: the form, then the list, the most recent note first, with a
 // delete button on each row. The rows come from useLiveQuery, which renders again at
@@ -66,7 +67,12 @@ export function Notes({ database = db }: { database?: Database }) {
           </li>
         ))}
       </ul>
-      <NotesBackup texts={(notes ?? []).map((note) => note.text)} database={database} />
+      {/* The exports sit on one line under the list: the CSV for a spreadsheet, then the
+          JSON copy the import takes back. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <NotesExport notes={notes ?? []} database={database} />
+        <NotesBackup texts={(notes ?? []).map((note) => note.text)} database={database} />
+      </div>
     </section>
   );
 }

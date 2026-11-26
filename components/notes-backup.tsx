@@ -50,7 +50,7 @@ export function NotesBackup({ texts, database = db }: { texts: readonly string[]
   }
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <button type="button" className={BUTTON} onClick={exportNotes}>
         Exporter les données
       </button>
